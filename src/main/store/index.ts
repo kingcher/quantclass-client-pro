@@ -71,6 +71,7 @@ const getAllDataPath = async (
 }
 
 // -- code 目录（内核代码目录）的路径统一从这里获取
+// -- 配置了 CODE_DATA_PATH 环境变量时，优先使用该地址作为 code 目录
 const getCodeDataPath = async (
 	nestPath?: string | string[],
 	autoCreate = true,
@@ -80,6 +81,16 @@ const getCodeDataPath = async (
 		: nestPath
 			? [nestPath]
 			: []
+
+	const envPath = process.env.CODE_DATA_PATH
+	if (envPath) {
+		// -- 行为与 getAllDataPath 保持一致：路径缺失时按需创建父目录
+		const _path = path.join(envPath, ...segments)
+		if (!fs.existsSync(path.dirname(_path)) && autoCreate) {
+			fs.mkdirSync(path.dirname(_path), { recursive: true })
+		}
+		return _path
+	}
 
 	return await getAllDataPath(["code", ...segments], autoCreate)
 }
