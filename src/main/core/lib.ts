@@ -17,7 +17,7 @@ import { PACKAGE_INFO } from "../vars.js"
 export async function getKernelVersion(kernal = "fuel") {
 	try {
 		// 获取code path
-		const codePath = await store.getAllDataPath("code", true)
+		const codePath = await store.getCodeDataPath()
 		// 读取该目录下的所有 .yml 文件
 		const files = await fs.readdir(codePath)
 

@@ -60,7 +60,7 @@ export enum Channels {
  * @returns 内核路径
  */
 export const getKernalPath = async (kernel: string) => {
-	const codePath = await store.getAllDataPath("code", true)
+	const codePath = await store.getCodeDataPath()
 	let kernalPath: string = path.join(codePath, kernel, kernel)
 
 	if (platform.isWindows) {
@@ -86,7 +86,7 @@ export const getKernalPath = async (kernel: string) => {
  * @returns 旧的内核路径
  */
 export const clearOldKernal = async (kernel: string) => {
-	const codePath = await store.getAllDataPath("code", true)
+	const codePath = await store.getCodeDataPath()
 	let kernalPath: string = path.join(codePath, kernel)
 
 	if (platform.isWindows) {

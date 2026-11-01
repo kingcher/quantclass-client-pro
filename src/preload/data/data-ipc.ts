@@ -24,6 +24,7 @@ import {
 import { updateStrategies } from "@/main/core/strategy/index.js"
 import DBManager from "@/main/lib/db-manager.js"
 import { execBin } from "@/main/lib/process.js"
+import store from "@/main/store/index.js"
 import { loadTradingDaysFromPeriodOffsetCsv } from "@/main/utils/common.js"
 import { isKernalRunning } from "@/main/utils/tools.js"
 import logger from "@/main/utils/wiston.js"
@@ -37,7 +38,7 @@ async function handleLoadProductStatus() {
 		logger.info("load-product-status")
 
 		return await getJsonDataFromFile(
-			["code", "data", "products-status.json"],
+			await store.getCodeDataPath(["data", "products-status.json"]),
 			"获取订阅数据信息失败",
 			{},
 		)

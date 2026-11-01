@@ -28,10 +28,11 @@ const activeWatchersIndependent = new Map<
 	{ timer: ReturnType<typeof setInterval>; lastSize: number }
 >()
 
-const KERNEL_LOG_PATH_MAP: Record<string, string[]> = {
-	fuel: ["code", "data", "log"],
-	select: ["real_trading", "logs"],
-	rocket: ["real_trading", "rocket", "data", "系统日志"],
+const KERNEL_LOG_PATH_MAP: Record<KernelType, () => Promise<string>> = {
+	fuel: () => store.getCodeDataPath(["data", "log"]),
+	select: () => store.getAllDataPath(["real_trading", "logs"]),
+	rocket: () =>
+		store.getAllDataPath(["real_trading", "rocket", "data", "系统日志"]),
 }
 
 type KernelType = "fuel" | "select" | "rocket"
@@ -84,8 +85,8 @@ async function watchOneKernel(
 	event: Electron.IpcMainInvokeEvent,
 	kernelType: KernelType,
 ): Promise<{ success: boolean; error?: string }> {
-	const pathArray = KERNEL_LOG_PATH_MAP[kernelType]
-	if (!pathArray) {
+	const getLogDir = KERNEL_LOG_PATH_MAP[kernelType]
+	if (!getLogDir) {
 		logger.error(`[kernel-log] 未知的内核类型: ${kernelType}`)
 		return { success: false, error: `未知的内核类型: ${kernelType}` }
 	}
@@ -96,7 +97,7 @@ async function watchOneKernel(
 		activeWatchers.delete(kernelType)
 	}
 
-	const logDir = await store.getAllDataPath(pathArray, true)
+	const logDir = await getLogDir()
 	const logFileName = await getLogFileName(kernelType)
 	const logFilePath = path.join(logDir, logFileName)
 
@@ -213,8 +214,8 @@ async function watchOneKernelIndependent(
 	event: Electron.IpcMainInvokeEvent,
 	kernelType: KernelType,
 ): Promise<{ success: boolean; error?: string }> {
-	const pathArray = KERNEL_LOG_PATH_MAP[kernelType]
-	if (!pathArray) {
+	const getLogDir = KERNEL_LOG_PATH_MAP[kernelType]
+	if (!getLogDir) {
 		logger.error(`[kernel-log-individual] 未知的内核类型: ${kernelType}`)
 		return { success: false, error: `未知的内核类型: ${kernelType}` }
 	}
@@ -225,7 +226,7 @@ async function watchOneKernelIndependent(
 		activeWatchersIndependent.delete(kernelType)
 	}
 
-	const logDir = await store.getAllDataPath(pathArray, true)
+	const logDir = await getLogDir()
 	const logFileName = await getLogFileName(kernelType)
 	const logFilePath = path.join(logDir, logFileName)
 

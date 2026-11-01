@@ -141,7 +141,7 @@ export async function downloadKernal(
 	const mainWindow = windowManager.getWindow()
 
 	try {
-		const codeFolder = await store.getAllDataPath(["code"])
+		const codeFolder = await store.getCodeDataPath()
 		const kernalFolderPath = path.join(codeFolder, kernal)
 
 		if (!downloadUrl) {

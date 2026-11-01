@@ -85,8 +85,7 @@ export async function downloadFullData(
 	let lastDownloadedBytes = 0
 
 	try {
-		const file_path = await store.getAllDataPath([
-			"code",
+		const file_path = await store.getCodeDataPath([
 			"data",
 			"products-status.json",
 		])

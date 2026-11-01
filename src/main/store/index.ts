@@ -70,6 +70,20 @@ const getAllDataPath = async (
 	return newAllDataPath
 }
 
+// -- code 目录（内核代码目录）的路径统一从这里获取
+const getCodeDataPath = async (
+	nestPath?: string | string[],
+	autoCreate = true,
+) => {
+	const segments = Array.isArray(nestPath)
+		? nestPath
+		: nestPath
+			? [nestPath]
+			: []
+
+	return await getAllDataPath(["code", ...segments], autoCreate)
+}
+
 const getPyBinPath = async () => {
 	const python_bin_path = await getSetting("python_bin_path", "")
 	const new_all_data_path = path.normalize(python_bin_path)
@@ -91,6 +105,7 @@ export default {
 	getSetting,
 	getSettings,
 	getAllDataPath,
+	getCodeDataPath,
 	getPyBinPath,
 	setDefaultAllDataPathIfNone,
 	CONFIG_PATH,

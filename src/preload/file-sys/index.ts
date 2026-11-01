@@ -19,6 +19,8 @@ export const fileSysIPC = {
 	openDirectory: (path: string[]) => ipcRenderer.invoke("open-directory", path),
 	openDataDirectory: (path?: string[] | string) =>
 		ipcRenderer.invoke("open-data-directory", path),
+	openCodeDataDirectory: (path?: string[] | string) =>
+		ipcRenderer.invoke("open-code-data-directory", path),
 	openUserDirectory: (path?: string[] | string) =>
 		ipcRenderer.invoke("open-user-directory", path),
 	getStoreValue: (key: string, defaultValue?: any) =>

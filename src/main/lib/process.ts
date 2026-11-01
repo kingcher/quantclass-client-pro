@@ -293,7 +293,7 @@ export const execBin = async (
 
 		logger.info(`[exec-${kernel}] ${action} 开始执行...`)
 
-		const fuelCodePath = await store.getAllDataPath(["code"])
+		const fuelCodePath = await store.getCodeDataPath()
 		const fuelProTradingPath = await store.getAllDataPath(["real_trading"])
 		const accessToken = await tokenStore.getAccessToken()
 		logger.info(`export PYTHONPATH=${fuelCodePath}`)

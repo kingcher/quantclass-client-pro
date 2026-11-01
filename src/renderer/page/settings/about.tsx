@@ -1,12 +1,13 @@
 import { Badge } from "@/renderer/components/ui/badge"
-import { cn } from "@/renderer/lib/utils"
 import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
+import { cn } from "@/renderer/lib/utils"
 import { BadgeInfo, ShieldQuestion } from "lucide-react"
 import { Puzzle } from "lucide-react"
 import { CalendarSync } from "lucide-react"
 
 export const openLogFolders = (showRocket = true) => {
-	const { openUserDirectory, openDataDirectory } = window.electronAPI
+	const { openUserDirectory, openDataDirectory, openCodeDataDirectory } =
+		window.electronAPI
 	return (
 		<>
 			<span
@@ -18,7 +19,7 @@ export const openLogFolders = (showRocket = true) => {
 			，
 			<span
 				className="cursor-pointer px-1 py-0.5 border bg-muted rounded-md hover:bg-muted-foreground hover:text-muted"
-				onClick={() => openDataDirectory(["code", "data", "log"])}
+				onClick={() => openCodeDataDirectory(["data", "log"])}
 			>
 				打开数据日志
 			</span>

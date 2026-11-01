@@ -8,8 +8,8 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
-import { LogModal } from "@/renderer/components/logModal"
 import MonitorDialog from "@/renderer/components/MonitorDialog"
+import { LogModal } from "@/renderer/components/logModal"
 import { Badge } from "@/renderer/components/ui/badge"
 import {
 	DropdownMenu,
@@ -20,10 +20,10 @@ import {
 } from "@/renderer/components/ui/dropdown-menu"
 import { isWindows } from "@/renderer/constant"
 import { useHotkeys } from "@/renderer/hooks/useHotkeys"
+import { usePlanXAccount } from "@/renderer/hooks/usePlanXAccount"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
 import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { isLogModalOpenAtom, isShowMonitorPanelAtom } from "@/renderer/store"
-import { usePlanXAccount } from "@/renderer/hooks/usePlanXAccount"
 import { userAtom } from "@/renderer/store/user"
 import { getSelectKernal } from "@/shared/lib/permission"
 import { useAtom, useAtomValue } from "jotai"
@@ -38,8 +38,12 @@ import {
 	SquareTerminal,
 } from "lucide-react"
 
-const { openUserDirectory, openDataDirectory, openDirectory } =
-	window.electronAPI
+const {
+	openUserDirectory,
+	openDataDirectory,
+	openCodeDataDirectory,
+	openDirectory,
+} = window.electronAPI
 
 export function LogMenuButton() {
 	const { realMarketConfig } = useRealMarketConfig()
@@ -91,9 +95,7 @@ export function LogMenuButton() {
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					{qmtFolderPath && (
-						<DropdownMenuItem
-							onClick={() => openDirectory([qmtFolderPath])}
-						>
+						<DropdownMenuItem onClick={() => openDirectory([qmtFolderPath])}>
 							<ExternalLink />
 							QMT文件夹
 						</DropdownMenuItem>
@@ -101,7 +103,12 @@ export function LogMenuButton() {
 					{rocketVisible && (
 						<DropdownMenuItem
 							onClick={() =>
-								openDataDirectory(["real_trading", "rocket", "data", "系统日志"])
+								openDataDirectory([
+									"real_trading",
+									"rocket",
+									"data",
+									"系统日志",
+								])
 							}
 						>
 							<Blocks />
@@ -121,7 +128,7 @@ export function LogMenuButton() {
 						</Badge>
 					</DropdownMenuItem>
 					<DropdownMenuItem
-						onClick={() => openDataDirectory(["code", "data", "log"])}
+						onClick={() => openCodeDataDirectory(["data", "log"])}
 					>
 						<DatabaseZap />
 						数据更新日志

@@ -38,11 +38,14 @@ const paginateData = <T>(data: T[], start: number, end: number) =>
 
 // -- 通用的文件读取和解析函数
 export const getJsonDataFromFile = async <T = unknown>(
-	filePath: string[],
+	filePath: string[] | string,
 	errorMessage: string,
 	defaultValue: T = [] as T,
 ): Promise<T> => {
-	const fullPath = await store.getAllDataPath(filePath)
+	// -- 数组按数据根目录下的相对路径解析，字符串视为已解析好的绝对路径
+	const fullPath = Array.isArray(filePath)
+		? await store.getAllDataPath(filePath)
+		: filePath
 	try {
 		await fs.access(fullPath)
 	} catch (error) {
@@ -74,7 +77,7 @@ export const getDataList = async (params: {
 			pageSize = 20,
 			file_name = "products-status.json",
 		} = params
-		const filePath = await store.getAllDataPath(["code", "data", file_name])
+		const filePath = await store.getCodeDataPath(["data", file_name])
 
 		const start = (cur - 1) * pageSize
 		const end = cur * pageSize

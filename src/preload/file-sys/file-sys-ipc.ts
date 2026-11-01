@@ -135,6 +135,16 @@ async function openDataDirectoryHandler(): Promise<void> {
 	)
 }
 
+async function openCodeDataDirectoryHandler(): Promise<void> {
+	ipcMain.handle(
+		"open-code-data-directory",
+		async (_event, nestPath?: string[] | string) => {
+			const _path = await store.getCodeDataPath(nestPath, true)
+			await shell.openPath(_path)
+		},
+	)
+}
+
 async function openUserDirectoryHandler(): Promise<void> {
 	ipcMain.handle(
 		"open-user-directory",
@@ -172,8 +182,8 @@ async function killRocketHandler(): Promise<void> {
 
 async function checkDBFileHandler(): Promise<void> {
 	ipcMain.handle("check-db-file", async () => {
-		const dbPath = await store.getAllDataPath(
-			["code", "data", "FuelBinStat.db"],
+		const dbPath = await store.getCodeDataPath(
+			["data", "FuelBinStat.db"],
 			false,
 		)
 		return fs.existsSync(dbPath)
@@ -210,7 +220,10 @@ async function importSelectStockHandler(): Promise<void> {
 			console.log("[import] config:", configFilePath)
 
 			const userAccount = await userStore.getUserAccount()
-			const isMember = checkPermission(userAccount?.permissions ?? [], "isMember")
+			const isMember = checkPermission(
+				userAccount?.permissions ?? [],
+				"isMember",
+			)
 
 			// -- 读取并解析 config.py（通过内嵌 Python 解析）
 			try {
@@ -244,9 +257,7 @@ async function importSelectStockHandler(): Promise<void> {
 						}
 					}
 				} else if (result.strategy_list != null) {
-					logger.error(
-						"[importLibraryDirHandler] 基础版不支持 strategy_list",
-					)
+					logger.error("[importLibraryDirHandler] 基础版不支持 strategy_list")
 					return {
 						success: false,
 						error: "导入失败：基础版请使用 strategy 格式，不支持 strategy_list",
@@ -257,9 +268,7 @@ async function importSelectStockHandler(): Promise<void> {
 						result.strategy2,
 					)
 					if (!validation.ok) {
-						logger.warn(
-							`[import] 基础版策略字段校验失败: ${validation.error}`,
-						)
+						logger.warn(`[import] 基础版策略字段校验失败: ${validation.error}`)
 						return { success: false, error: validation.error }
 					}
 					strategyList = [strategy]
@@ -855,6 +864,7 @@ export const regFileSysIPC = () => {
 	selectFileDirHandler()
 	openDirectoryHandler()
 	openDataDirectoryHandler()
+	openCodeDataDirectoryHandler()
 	openUserDirectoryHandler()
 	parseCsvFileHandler()
 	readChangelogHandler()

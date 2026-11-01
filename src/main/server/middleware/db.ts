@@ -8,12 +8,12 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
+import fs from "node:fs"
 import store from "@/main/store/index.js"
 import logger from "@/main/utils/wiston.js"
 import Database from "better-sqlite3"
 import { type BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3"
 import type { MiddlewareHandler } from "hono"
-import fs from "node:fs"
 
 let db: BetterSQLite3Database | null = null
 let dbWatcher: fs.FSWatcher | null = null
@@ -26,8 +26,8 @@ export const initDB = async () => {
 			return null
 		}
 
-		const dbPath = await store.getAllDataPath(
-			["code", "data", "FuelBinStat.db"],
+		const dbPath = await store.getCodeDataPath(
+			["data", "FuelBinStat.db"],
 			false,
 		)
 		logger.info(`尝试初始化数据库，路径: ${dbPath}`)
@@ -35,7 +35,7 @@ export const initDB = async () => {
 		if (!fs.existsSync(dbPath)) {
 			logger.info(`数据库文件不存在: ${dbPath}`)
 			// 监听数据库文件夹
-			const dbDir = await store.getAllDataPath(["code", "data"], false)
+			const dbDir = await store.getCodeDataPath(["data"], false)
 			if (dbWatcher) {
 				dbWatcher.close()
 			}

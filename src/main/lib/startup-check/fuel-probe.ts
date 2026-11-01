@@ -14,8 +14,8 @@ import {
 	spawn,
 } from "node:child_process"
 import fs from "node:fs"
-import store, { CONFIG_PATH } from "@/main/store/index.js"
 import { tokenStore } from "@/main/lib/tokenStore.js"
+import store, { CONFIG_PATH } from "@/main/store/index.js"
 import { getKernalPath } from "@/main/utils/common.js"
 import logger from "@/main/utils/wiston.js"
 import { platform } from "@electron-toolkit/utils"
@@ -59,7 +59,7 @@ export async function runFuelProbe(
 		}
 	}
 
-	const fuelCodePath = await store.getAllDataPath(["code"])
+	const fuelCodePath = await store.getCodeDataPath()
 	const fuelProTradingPath = await store.getAllDataPath(["real_trading"])
 	const useOpenSell = _store.get(
 		"real_market_config.use_open_sell",

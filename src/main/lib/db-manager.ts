@@ -44,8 +44,8 @@ class DBManager {
 	async getConnection(
 		requiredTables?: string[],
 	): Promise<Database.Database | null> {
-		const dbPath = await store.getAllDataPath(
-			["code", "data", "FuelBinStat.db"],
+		const dbPath = await store.getCodeDataPath(
+			["data", "FuelBinStat.db"],
 			false,
 		)
 

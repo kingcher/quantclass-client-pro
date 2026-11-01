@@ -28,11 +28,11 @@ import { useAppVersions } from "@/renderer/hooks/useAppVersion"
 import { useInvokeUpdateKernal } from "@/renderer/hooks/useInvokeUpdateKernal"
 import { usePermissionCheck } from "@/renderer/hooks/usePermissionCheck"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { useSettings } from "@/renderer/hooks/useSettings"
 import { useVersionCheck } from "@/renderer/hooks/useVersionCheck"
 import { cn } from "@/renderer/lib/utils"
 import Contributors from "@/renderer/page/settings/contributors"
-import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { isAutoLoginAtom, versionListAtom } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsAtom } from "@/renderer/store/versions"
@@ -81,7 +81,7 @@ export default function SettingsPage() {
 		(isMemberOrStock && isWindows && VITE_XBX_ENV === "production")
 	const version = useAtomValue(versionsAtom)
 	const setVersionList = useSetAtom(versionListAtom)
-	const { setAutoLaunch, openDataDirectory, killAllKernals, openUrl } =
+	const { setAutoLaunch, openCodeDataDirectory, killAllKernals, openUrl } =
 		window.electronAPI
 	const handleTimeTask = useHandleTimeTask() // 数据任务控制
 	const { isAutoRocket, handleToggleAutoRocket } = useToggleAutoRealTrading() // 自动交易控制
@@ -111,11 +111,7 @@ export default function SettingsPage() {
 	}
 
 	const handleSetIsAutoLaunchMinData = (value: boolean) => {
-		if (
-			value &&
-			!checkWithToast({ requireMember: true }).isValid
-		)
-			return
+		if (value && !checkWithToast({ requireMember: true }).isValid) return
 
 		const updates: Partial<SettingsType> = { is_auto_launch_min_data: value }
 		if (!value) {
@@ -272,10 +268,7 @@ export default function SettingsPage() {
 
 				<AboutPage className="border p-2 rounded-lg max-h-72 overflow-y-auto shadow-inner bg-neutral-50/60 dark:bg-neutral-900" />
 				<div
-					className={cn(
-						"grid",
-						rocketVisible ? "grid-cols-3" : "grid-cols-2",
-					)}
+					className={cn("grid", rocketVisible ? "grid-cols-3" : "grid-cols-2")}
 				>
 					<KernalVersion
 						name="fuel"
@@ -349,7 +342,7 @@ export default function SettingsPage() {
 					variant="outline"
 					size="sm"
 					onClick={async () => {
-						await openDataDirectory("code")
+						await openCodeDataDirectory()
 					}}
 				>
 					<FolderCode className="size-4 mr-2" />

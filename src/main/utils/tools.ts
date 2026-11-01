@@ -158,12 +158,12 @@ export const isPidRunning = (pid: string) => {
 	return _isPidRunningUnix(pid)
 }
 
-const PID_LOCK_PATH = {
-	fuel: ["code", "data"],
-	fusion: ["real_trading", "data", "locker"],
-	aqua: ["real_trading", "data", "locker"],
-	rocket: ["real_trading", "rocket", "data"],
-	scm: ["code", "scm", "data"],
+const PID_LOCK_PATH: Record<KernalType, () => Promise<string>> = {
+	fuel: () => store.getCodeDataPath(["data"]),
+	fusion: () => store.getAllDataPath(["real_trading", "data", "locker"]),
+	aqua: () => store.getAllDataPath(["real_trading", "data", "locker"]),
+	rocket: () => store.getAllDataPath(["real_trading", "rocket", "data"]),
+	scm: () => store.getCodeDataPath(["scm", "data"]),
 }
 
 export const isKernalRunning = async (
@@ -192,10 +192,7 @@ export const isKernalRunning = async (
 		}
 	}
 
-	const pidLockPath: string = await store.getAllDataPath(
-		PID_LOCK_PATH[kernal],
-		true,
-	)
+	const pidLockPath: string = await PID_LOCK_PATH[kernal]()
 	logger.info(`[${kernal}] 检查运行中的进程: ${pidLockPath}`)
 
 	// -- 检查文件夹是否存在
@@ -329,10 +326,7 @@ export const killKernalByForce = async (
 		return
 	}
 
-	const pidLockFilePath: string = await store.getAllDataPath(
-		PID_LOCK_PATH[kernal],
-		true, // -- 自动创建文件夹
-	)
+	const pidLockFilePath: string = await PID_LOCK_PATH[kernal]()
 
 	if (!fs.existsSync(pidLockFilePath)) {
 		logger.info(`[${kernal}] 进程锁文件夹不存在，运行中: ${strictMode}`)
