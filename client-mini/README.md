@@ -20,27 +20,30 @@
 
 ## 快速开始
 
-### 方式一:attach 模式(推荐,配置最少)
+### 配置正式客户端路径
 
-只用正式客户端的 config.json,mini 不重复维护任何业务配置:
+业务配置只从正式客户端的 config.json 读取,mini 配置用于指定路径、凭证和调度开关:
 
 ```bash
-cp config.attach.example.json config.json
-# 里面只需要三样:
+cp config.example.json config.json
+# 配置项:
 #   client_config  -> 正式客户端 config.json 的地址
 #   auth.refresh_token -> 登录凭证;留空则尝试自动解密同目录 refresh-token.enc
 #                      (仅当 mini 与正式客户端跑在同一 Windows 用户下可解出;
 #                       macOS/Linux 的 .enc 是 Keychain+AES 格式,解不了,必须手填)
-#   state_dir      -> mini 自己的运行时状态目录
+#   data_dir       -> 可选,覆盖数据目录
+#   code_dir       -> 可选,覆盖内核目录
+#   state_dir      -> mini 自己的运行时状态目录,默认 ./state
 python run.py --config config.json
 ```
 
-attach 模式下 mini 的取值规则(与正式客户端完全一致):
+mini 的取值规则(路径配置为空时使用默认值):
 
 | mini 需要 | 来源 |
 |---|---|
-| `data_dir` | 正式 config 的 `settings.all_data_path` |
-| `code_dir` | `CODE_DATA_PATH` 环境变量,缺省则 `{all_data_path}/code` |
+| `data_dir` | mini 的 `data_dir`,缺省读正式 config 的 `settings.all_data_path` |
+| `code_dir` | mini 的 `code_dir`,缺省为 `{data_dir}/code`(不读取环境变量) |
+| `state_dir` | mini 的 `state_dir`,缺省为 `./state` |
 | 换仓时间 | 正式客户端同目录 `rebalance_time.json` |
 | `real_market_config` / `schedule` / `pos_mgmt.strategies` / 开关 | 直接读正式 config |
 | `real_market_25.json` | **只读不写**:由正式客户端生成(其调度器每分钟写),mini 假定配置静态;rocket 按 `FUEL_CLIENT_CONFIG_PATH` 同目录找到它 |
@@ -58,29 +61,24 @@ real_market_25.json、refresh-token.enc 一个都不写)。
 rocket 的回调就不知道落到谁头上。改策略配置的流程:
 停 mini → 开正式客户端改好并让其跑一轮 → 关正式客户端 → 起 mini。
 
-### 方式二:standalone 模式
+## mini 配置说明
 
-全部配置自己维护(不依赖正式客户端):把 `data_dir`、`code_dir`、
-`state_dir`、`auth.refresh_token`、`real_market_config`、`pos_mgmt.strategies`
-等键直接写进 mini 的 config.json(键名与正式客户端一致)。注意此模式下
-`real_market_25.json` 没有生成方,需自行提供。
-
-## 配置说明(standalone 模式)
+`client_config` 必填,不再支持把业务配置直接放在 mini 配置中独立运行。
+`client_config`、`data_dir`、`code_dir`、`state_dir` 的相对路径均以
+mini 配置文件所在目录为基准。
+正式配置的 `settings.all_data_path` 相对路径以正式配置所在目录为基准。
+路径覆盖不会修改正式客户端配置。
 
 | 键 | 说明 |
 |---|---|
-| `data_dir` | 数据根目录(等价 `settings.all_data_path`),`real_trading/`、`period_offset.csv` 在其下 |
-| `code_dir` | 内核目录(等价 `CODE_DATA_PATH`),`{kernel}/{kernel}.exe` 放这里,**mini 不自动下载内核** |
-| `state_dir` | 运行时状态目录(等价 userData):`state.json`、更新锁、日志 |
-| `auth.refresh_token` | 登录凭证。正式客户端里由 UI 登录写入 `refresh-token.enc`,mini 直接明文配置 |
-| `settings.api_key` / `hid` | 调度层游客判断用 |
-| `server_port` | 回调服务端口;mini 精确绑定此端口(占用即报错退出),不写回、不自选;rocket 通过 `FUEL_CLIENT_CONFIG_PATH`(即本 config.json)读到它 |
-| `auto_real_trading` | 自动实盘总开关(开启时自动带动 `auto_update`) |
-| `qmt_connect_ok` | QMT 连通标志。正式客户端由 startup-check 探测写入,mini 需自行确认后手动置 true |
-| `real_market_config.*` | `qmt_mode` 必须为 `planA` 才自动下单;`account_id` 为 `"0"` 时走手动模式并停掉 rocket |
-| `schedule.dataModule/selectModule` | fuel/选股时间表(`HH:mm`,空数组 = 每个 15 分钟点都执行) |
-| `rebalance_time` | 换仓时间配置,格式同正式客户端 `rebalance_time.json` |
-| `pos_mgmt.strategies` | 仓管策略库,结构同正式客户端 config.json 内的同名键 |
+| `auth.refresh_token` | 登录凭证;留空尝试解密正式配置同目录的 `refresh-token.enc` |
+| `base_url` | API 地址,默认 `https://api.quantclass.cn` |
+| `auto_real_trading` / `auto_update` / `auto_min_data` | 调度开关,mini 配置优先于正式配置 |
+| `min_data_mode` | 分钟数据模式,mini 配置优先于正式配置 |
+
+`server_port`、`real_market_config`、`schedule`、`pos_mgmt.strategies` 等业务配置
+仍读取正式客户端。`real_market_25.json` 需由正式客户端提前生成,mini 不写入。
+内核需手动放置在 `code_dir/{kernel}/`,mini 不自动下载。
 
 ## rocket 启动条件链(每分钟评估,全部满足才 spawn)
 
@@ -105,7 +103,7 @@ auto_real_trading ─ 网络 online ─ 用户已登录 ─ qmt_mode=planA ─ q
 5. **遥测(postUserMainAction/postTelemetryReport)未实现**
 6. **`/heartbeat` 路由不限定 Windows**(原版仅 Windows 注册)
 6. **内核目录约定**:mini 与正式客户端可共用同一 `code_dir`/`data_dir`,但请勿两边同时调度
-   (attach 模式下更不要同时运行,见上)
+   (两者使用同一回调端口,不能同时运行,见上)
 
 ## refresh_token 从哪来
 
@@ -134,7 +132,7 @@ auto_real_trading ─ 网络 online ─ 用户已登录 ─ qmt_mode=planA ─ q
 2. 正式客户端**登录一次**并完成实盘配置(策略库、qmt_mode、账号、
    startup-check 通过后 config 里才有 `qmt_connect_ok: true`);
    **开启自动任务跑至少一分钟**——让它生成 `real_market_25.json`(mini 只读它),然后**退出**
-3. 拷贝 client-mini 目录进虚拟机,`copy config.attach.example.json config.json`,
+3. 拷贝 client-mini 目录进虚拟机,`copy config.example.json config.json`,
    `client_config` 指向 `%APPDATA%\QuantclassClient\config.json`,
    `auth.refresh_token` 留空(DPAPI 自动解密)
 4. 预检:`py check.py --config config.json` —— 全绿再继续

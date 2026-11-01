@@ -215,7 +215,7 @@ def exec_bin(cfg: MiniConfig, tokens, user_account, args: list[str],
         fuel_code_path = str(cfg.get_code_data_path())
         fuel_pro_trading_path = str(cfg.get_all_data_path("real_trading"))
         access_token = tokens.get_access_token()
-        client_config_path = str(cfg.path)  # FUEL_CLIENT_CONFIG_PATH = mini config.json
+        client_config_path = str(cfg.path)  # FUEL_CLIENT_CONFIG_PATH = 正式客户端 config.json
 
         use_open_sell = str(cfg.real_market_config.get("use_open_sell", "0"))
 

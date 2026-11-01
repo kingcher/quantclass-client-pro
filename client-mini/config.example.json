@@ -4,5 +4,7 @@
     "refresh_token": ""
   },
   "base_url": "https://api.quantclass.cn",
+  "data_dir": "",
+  "code_dir": "",
   "state_dir": "./state"
 }

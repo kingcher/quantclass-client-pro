@@ -3,7 +3,7 @@
     py check.py --config config.json
 
 检查项(全部通过才建议无人值守):
-    [ok/fail] 配置加载(attach/standalone)
+    [ok/fail] 配置加载
     [ok/fail] refresh_token(手填或 DPAPI 自动解密)
     [ok/fail] token 刷新(POST /user/auth/refresh)
     [ok/fail] 用户信息 + isMember/isStock 权限
@@ -50,8 +50,7 @@ def main():
     # 1. 配置加载 ---------------------------------------------------------
     try:
         cfg = MiniConfig(args.config)
-        mode = "attach" if cfg.bootstrap.get("client_config") else "standalone"
-        record("ok", f"配置加载({mode} 模式),数据目录 {cfg.data_dir}")
+        record("ok", f"配置加载({cfg.path}),数据目录 {cfg.data_dir}")
     except Exception as e:
         record("fail", f"配置加载失败: {e}")
         return summary()

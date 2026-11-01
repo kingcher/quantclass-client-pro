@@ -1,20 +1,7 @@
 """配置与状态存储。
 
-支持两种模式:
-
-1. attach 模式(推荐):mini 配置里只写 `client_config` 指向正式客户端的
-   config.json(%APPDATA%/QuantclassClient/config.json),其余配置全部
-   从它读取——data_dir 取 settings.all_data_path、code_dir 按
-   CODE_DATA_PATH 环境变量优先(与 store.getCodeDataPath 规则一致)、
-   换仓时间读同目录 rebalance_time.json、real_market_25.json 也只读不写
-   (由正式客户端生成,mini 假定配置静态)。mini 只额外需要 refresh_token
-   (正式客户端的 refresh-token.enc 是 safeStorage 加密的,读不出来)。
-
-2. standalone 模式:所有配置写在 mini 自己的 config.json
-   (见 config.example.json)。
-
-对应原仓库的 electron-store 体系:MiniConfig 兼任 FUEL_CLIENT_CONFIG_PATH,
-StateStore 是运行时可变状态(server_port / 心跳时间戳 / 用户缓存)。
+mini 通过 client_config 只读正式客户端配置,可覆盖数据、内核和状态目录。
+StateStore 保存 mini 独立的运行时可变状态。
 """
 
 import json
@@ -40,8 +27,7 @@ def _atomic_write_json(path: Path, data) -> None:
 
 
 class MiniConfig:
-    """加载配置。attach 模式下 self.path 即正式客户端 config.json,
-    FUEL_CLIENT_CONFIG_PATH 直接指向它(rocket 读的就是这份)。"""
+    """只读正式客户端配置,FUEL_CLIENT_CONFIG_PATH 始终指向它。"""
 
     def __init__(self, config_path: str | Path):
         bootstrap_path = Path(config_path).expanduser().resolve()
@@ -49,82 +35,61 @@ class MiniConfig:
             raise FileNotFoundError(
                 f"配置文件不存在: {bootstrap_path}(可从 config.example.json 复制修改)"
             )
-        bootstrap = json.loads(bootstrap_path.read_text(encoding="utf-8"))
+        self.bootstrap: dict = json.loads(bootstrap_path.read_text(encoding="utf-8"))
 
-        client_config = bootstrap.get("client_config")
-        if client_config:
-            # ==============================================================
-            # attach 模式:正式客户端 config.json 为配置源
-            # ==============================================================
-            self.path = Path(client_config).expanduser()
-            if not self.path.is_absolute():
-                self.path = (bootstrap_path.parent / self.path).resolve()
-            if not self.path.exists():
-                raise FileNotFoundError(
-                    f"正式客户端 config.json 不存在: {self.path}"
-                    f"(Windows 通常在 %APPDATA%\\QuantclassClient\\config.json)"
-                )
-            self.data: dict = json.loads(self.path.read_text(encoding="utf-8"))
-            self.config_dir = self.path.parent
+        client_config = self.bootstrap.get("client_config")
+        if not client_config:
+            raise ValueError("mini 配置缺少 client_config,请指定正式客户端 config.json")
+        self.path = self._abs(client_config, bootstrap_path.parent)
+        if not self.path.exists():
+            raise FileNotFoundError(f"正式客户端 config.json 不存在: {self.path}")
+        self.data: dict = json.loads(self.path.read_text(encoding="utf-8"))
+        self.config_dir = self.path.parent
 
-            # -- data_dir / code_dir:与 store.getAllDataPath / getCodeDataPath 同规则
+        data_dir = self.bootstrap.get("data_dir")
+        if data_dir:
+            self.data_dir = self._abs(data_dir, bootstrap_path.parent)
+        else:
             all_data_path = self.get_setting("all_data_path", "")
             if not all_data_path:
-                raise ValueError("正式客户端 config.json 缺少 settings.all_data_path")
+                raise ValueError(
+                    "请配置 mini 的 data_dir 或正式客户端的 settings.all_data_path"
+                )
             self.data_dir = self._abs(all_data_path, self.config_dir)
-            code_env = os.environ.get("CODE_DATA_PATH")
-            self.code_dir = (
-                self._abs(code_env, bootstrap_path.parent)
-                if code_env
-                else self.data_dir / "code"
-            )
 
-            # -- 换仓时间:正式客户端存在同目录 rebalance_time.json
-            reb_path = self.config_dir / "rebalance_time.json"
-            if reb_path.exists() and not self.data.get("rebalance_time"):
-                try:
-                    self.data["rebalance_time"] = json.loads(
-                        reb_path.read_text(encoding="utf-8")
-                    )
-                except (json.JSONDecodeError, OSError) as e:
-                    logger.warning(f"[config] 读取 rebalance_time.json 失败: {e}")
+        code_dir = self.bootstrap.get("code_dir")
+        self.code_dir = (
+            self._abs(code_dir, bootstrap_path.parent)
+            if code_dir
+            else self.data_dir / "code"
+        )
 
-            refresh_token = (bootstrap.get("auth") or {}).get("refresh_token", "")
-            if not refresh_token:
-                # -- 未手动配置时,尝试解密同目录 refresh-token.enc
-                #    (仅 Windows 且与正式客户端同一系统用户时可解出)
-                from .safe_storage import read_refresh_token
+        reb_path = self.config_dir / "rebalance_time.json"
+        if reb_path.exists() and not self.data.get("rebalance_time"):
+            try:
+                self.data["rebalance_time"] = json.loads(
+                    reb_path.read_text(encoding="utf-8")
+                )
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"[config] 读取 rebalance_time.json 失败: {e}")
 
-                refresh_token = read_refresh_token(self.config_dir) or ""
-                if refresh_token:
-                    logger.info("[config] attach 模式将使用 refresh-token.enc 中的凭证")
-            base_url = bootstrap.get("base_url", DEFAULT_BASE_URL)
-            state_dir_value = bootstrap.get("state_dir", "./state")
-            logger.info(f"[config] attach 模式,配置源: {self.path}")
-        else:
-            # ==============================================================
-            # standalone 模式:mini 自己的 config.json
-            # ==============================================================
-            self.path = bootstrap_path
-            self.data = bootstrap
-            self.config_dir = self.path.parent
-            self.data_dir = self._abs(self.data["data_dir"], self.config_dir)
-            self.code_dir = self._abs(self.data["code_dir"], self.config_dir)
-            refresh_token = (self.data.get("auth") or {}).get("refresh_token", "")
-            base_url = self.data.get("base_url", DEFAULT_BASE_URL)
-            state_dir_value = self.data.get("state_dir", "./state")
+        self.refresh_token: str = (self.bootstrap.get("auth") or {}).get("refresh_token", "")
+        if not self.refresh_token:
+            from .safe_storage import read_refresh_token
 
-        self.base_url: str = base_url
-        self.refresh_token: str = refresh_token
-        self.bootstrap: dict = bootstrap  # mini 自身的引导配置(attach 模式下可放开关覆盖)
-        # state_dir 等价于正式客户端的 userData 目录(mini 用独立的,避免互踩)
-        self.state_dir: Path = self._abs(state_dir_value, bootstrap_path.parent)
+            self.refresh_token = read_refresh_token(self.config_dir) or ""
+            if self.refresh_token:
+                logger.info("[config] 使用 refresh-token.enc 中的凭证")
+        self.base_url: str = self.bootstrap.get("base_url", DEFAULT_BASE_URL)
+        # mini 使用独立的运行时状态目录,不写入正式客户端配置。
+        self.state_dir: Path = self._abs(
+            self.bootstrap.get("state_dir") or "./state", bootstrap_path.parent
+        )
         self.state_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"[config] 配置源: {self.path}")
 
     def get_switch(self, key: str, default: bool = False) -> bool:
-        """调度开关:bootstrap(attach 模式的 mini 配置)优先,其次正式 config。
-        auto_real_trading 正式客户端会持久化;auto_update/auto_min_data 原本
-        只在内存,attach 模式下想开就写进 mini 自己的配置里。"""
+        """调度开关优先读取 mini 配置,其次读取正式客户端配置。"""
         if key in self.bootstrap:
             return bool(self.bootstrap[key])
         return bool(self.data.get(key, default))
