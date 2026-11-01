@@ -130,7 +130,10 @@ auto_real_trading ─ 网络 online ─ 用户已登录 ─ qmt_mode=planA ─ q
 正式客户端登录后写在 userData 的 `refresh-token.enc`,是 Electron safeStorage 密文:
 
 - **mini 与正式客户端同一 Windows 用户运行**(如都在虚拟机内):留空
-  `auth.refresh_token` 即可,mini 会经 DPAPI 自动解密(safe_storage.py)
+  `auth.refresh_token` 即可,mini 自动解密(safe_storage.py)。支持裸 DPAPI,
+  以及 Windows `v10` 格式:读取同目录 `Local State` 的 `os_crypt.encrypted_key`,
+  经 DPAPI 解出密钥后使用系统 CNG 验证并解密 AES-256-GCM,无需第三方依赖。
+  `Local State` 与 `refresh-token.enc` 必须匹配,不要只跨机器复制凭证文件。
 - **mini 跑在 macOS / 其他机器**:DPAPI blob 跨机器解不开,须手动填——
   抓包正式客户端的 `POST /user/auth/refresh` 请求头 `Authorization: Bearer xxx`,
   或临时实现一次登录接口取 token 后填入配置
