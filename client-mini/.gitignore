@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+state/
+logs/
+config.json
+real_market_25.json

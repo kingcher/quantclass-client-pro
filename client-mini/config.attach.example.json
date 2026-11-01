@@ -1,0 +1,8 @@
+{
+  "client_config": "C:/Users/你的用户名/AppData/Roaming/QuantclassClient/config.json",
+  "auth": {
+    "refresh_token": ""
+  },
+  "base_url": "https://api.quantclass.cn",
+  "state_dir": "./state"
+}
