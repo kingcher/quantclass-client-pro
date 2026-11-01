@@ -6,5 +6,6 @@
   "base_url": "https://api.quantclass.cn",
   "data_dir": "",
   "code_dir": "",
+  "fuel_temp_file_path": "",
   "state_dir": "./state"
 }

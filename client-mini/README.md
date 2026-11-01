@@ -85,6 +85,17 @@ mini 配置文件所在目录为基准。
 仍读取正式客户端。`real_market_25.json` 需由正式客户端提前生成,mini 不写入。
 内核需手动放置在 `code_dir/{kernel}/`,mini 不自动下载。
 
+## fuel 临时路径环境变量
+
+mini 配置可填写 `"fuel_temp_file_path": "Z:/stockdata/.fuel-temp"`。
+非空相对路径以 mini 配置文件所在目录为基准,启动 fuel 时传入
+`FUEL_TEMP_FILE_PATH` 并记录该路径;未配置或为空时仍传空字符串。
+该配置不影响其他内核,不自动创建文件或目录。调用方显式传入的
+`extra_env` 字符串或其中的 `FUEL_TEMP_FILE_PATH` 优先于此配置。
+
+**此功能只保证环境变量被传入,尚未确认 fuel 是否将它用作 parquet 合并临时目录。**
+需通过 fuel 实际输出验证,不能据此认定跨盘移动问题已解决。
+
 ## 启动时同步本地内核
 
 `MiniConfig.default_code_dir` 固定为 `data_dir/code`,由数据目录派生,无需额外填写 JSON。

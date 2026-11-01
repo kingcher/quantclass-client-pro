@@ -228,7 +228,10 @@ def exec_bin(cfg: MiniConfig, tokens, user_account, args: list[str],
                 "FUEL_PRO_TRADING_PATH": fuel_pro_trading_path,
                 "PYTHONPATH": fuel_code_path,
                 "FUEL_ACCESS_TOKEN": access_token or "",
-                "FUEL_TEMP_FILE_PATH": extra_env if isinstance(extra_env, str) else "",
+                "FUEL_TEMP_FILE_PATH": (
+                    extra_env if isinstance(extra_env, str)
+                    else cfg.fuel_temp_file_path if kernel == "fuel" else ""
+                ),
                 "USE_OPEN_SELL": use_open_sell,
             }
         )
@@ -237,6 +240,8 @@ def exec_bin(cfg: MiniConfig, tokens, user_account, args: list[str],
 
         logger.info(f"[exec-{kernel}] 内核路径: {bin_path}")
         logger.info(f"[exec-{kernel}] FUEL_CODE_PATH={fuel_code_path}")
+        if kernel == "fuel":
+            logger.info(f"[exec-fuel] FUEL_TEMP_FILE_PATH={env['FUEL_TEMP_FILE_PATH']}")
         logger.info(f"[exec-{kernel}] FUEL_CLIENT_CONFIG_PATH={client_config_path}")
         logger.info(f"[exec-{kernel}] FUEL_PRO_TRADING_PATH={fuel_pro_trading_path}")
         logger.info(f"~% {kernel} {' '.join(args)}")

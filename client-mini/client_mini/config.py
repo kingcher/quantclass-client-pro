@@ -67,6 +67,12 @@ class MiniConfig:
             else self.default_code_dir
         )
 
+        fuel_temp_file_path = self.bootstrap.get("fuel_temp_file_path")
+        self.fuel_temp_file_path: str = (
+            str(self._abs(fuel_temp_file_path, bootstrap_path.parent))
+            if fuel_temp_file_path else ""
+        )
+
         reb_path = self.config_dir / "rebalance_time.json"
         if reb_path.exists() and not self.data.get("rebalance_time"):
             try:
