@@ -6,6 +6,7 @@ shared/lib/trading-day.ts 的 CSV 日期规范。
 """
 
 import csv
+import io
 import re
 from datetime import datetime
 from pathlib import Path
@@ -42,7 +43,13 @@ def load_trading_days(data_dir: Path) -> list[str]:
         logger.warning(f"[period-offset] period_offset.csv 不存在: {csv_path}")
         return []
     try:
-        with open(csv_path, encoding="utf-8-sig", newline="") as f:
+        raw = csv_path.read_bytes()
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            # Windows 数据文件可能为 GBK;GB18030 兼容 GBK。
+            text = raw.decode("gbk")
+        with io.StringIO(text, newline="") as f:
             ymds = []
             for row in csv.reader(f):
                 if not row:
@@ -51,7 +58,7 @@ def load_trading_days(data_dir: Path) -> list[str]:
                 if ymd:
                     ymds.append(ymd)
         return sorted(set(ymds))
-    except OSError as e:
+    except (OSError, UnicodeError, csv.Error) as e:
         logger.error(f"[period-offset] 读取 period_offset.csv 失败: {e}")
         return []
 
