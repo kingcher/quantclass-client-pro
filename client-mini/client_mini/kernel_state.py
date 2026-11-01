@@ -29,9 +29,9 @@ _LOCK_RE = re.compile(r"^(\d+)\.py\.lock$")
 
 def _lock_dir(cfg: MiniConfig, kernel: str) -> Path:
     if kernel == "fuel":
-        return cfg.get_code_data_path("data")
+        return cfg.get_kernel_code_dir(kernel) / "data"
     if kernel == "scm":
-        return cfg.get_code_data_path(["scm", "data"])
+        return cfg.get_kernel_code_dir(kernel) / "scm" / "data"
     return cfg.get_all_data_path(PID_LOCK_PATH[kernel])
 
 

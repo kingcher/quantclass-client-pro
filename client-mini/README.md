@@ -85,6 +85,26 @@ mini 配置文件所在目录为基准。
 仍读取正式客户端。`real_market_25.json` 需由正式客户端提前生成,mini 不写入。
 内核需手动放置在 `code_dir/{kernel}/`,mini 不自动下载。
 
+## 每个内核独立配置代码目录
+
+可配置 `fuel_code_dir`、`fusion_code_dir`、`aqua_code_dir`、`rocket_code_dir`、
+`scm_code_dir`,未填写或为空时回退到公共 `code_dir`。
+这些值是**代码根目录**,不是 exe 文件路径;相对路径按 mini 配置文件所在目录解析。
+
+例如 fuel 放在数据盘,其余内核放在本地:
+
+```json
+{
+  "code_dir": "C:/client-mini/code",
+  "fuel_code_dir": "Z:/stockdata/code"
+}
+```
+
+fuel 可执行文件为 `Z:/stockdata/code/fuel/fuel.exe`,rocket 则为
+`C:/client-mini/code/rocket/rocket.exe`。每个进程的 `FUEL_CODE_PATH` 和
+`PYTHONPATH` 使用对应的根目录;fuel/scm 的锁目录、rocket 预检和启动同步也使用独立目录。
+注意:更改 `FUEL_CODE_PATH` 后内核如何处理临时文件,仍需实际运行验证。
+
 ## fuel 临时路径环境变量
 
 mini 配置可填写 `"fuel_temp_file_path": "Z:/stockdata/.fuel-temp"`。
@@ -99,7 +119,7 @@ mini 配置可填写 `"fuel_temp_file_path": "Z:/stockdata/.fuel-temp"`。
 ## 启动时同步本地内核
 
 `MiniConfig.default_code_dir` 固定为 `data_dir/code`,由数据目录派生,无需额外填写 JSON。
-配置了 `code_dir` 且它不在默认目录内时,`run.py` 会在启动服务和调度器前调用
+每个内核的有效代码目录不在默认目录内时,`run.py` 会在启动服务和调度器前调用
 `client_mini/kernal_copy.py` 的 `copy_kernels()`:
 
 - 按 fuel、fusion、aqua、rocket、scm 的 `.yml` 文件名比较版本,不请求远程接口。
@@ -107,7 +127,7 @@ mini 配置可填写 `"fuel_temp_file_path": "Z:/stockdata/.fuel-temp"`。
 - 替换目标内核目录并清理该内核旧版本标记,其他内核及无关文件不受影响;源目录只读。
 - 版本相同则跳过;源版本或二进制缺失时记录日志并保留目标。
 - 先复制到临时目录,成功后再替换;复制失败、源版本标记不唯一或目标内核忙时停止启动。
-- `code_dir` 与默认目录相同或在其子目录下时不复制;禁止将其设为默认目录的父目录。
+- 内核的有效代码目录与默认目录相同或在其子目录下时不复制;禁止将其设为默认目录的父目录。
 
 请在正式客户端退出、源内核更新完成后启动 mini,不要在同步期间运行或更新内核。
 

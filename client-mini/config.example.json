@@ -6,6 +6,11 @@
   "base_url": "https://api.quantclass.cn",
   "data_dir": "",
   "code_dir": "",
+  "fuel_code_dir": "",
+  "fusion_code_dir": "",
+  "aqua_code_dir": "",
+  "rocket_code_dir": "",
+  "scm_code_dir": "",
   "fuel_temp_file_path": "",
   "state_dir": "./state"
 }

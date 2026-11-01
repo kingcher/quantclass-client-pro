@@ -92,7 +92,7 @@ def main():
         record("ok" if passed else "warn", f"条件链-{name}" + ("" if passed else " 不满足"))
 
     # 6. rocket 二进制 ----------------------------------------------------
-    rocket_bin = cfg.get_code_data_path("rocket") / ("rocket.exe" if IS_WINDOWS else "rocket")
+    rocket_bin = cfg.get_kernel_code_dir("rocket") / "rocket" / ("rocket.exe" if IS_WINDOWS else "rocket")
     record("ok" if rocket_bin.exists() else "fail",
            f"rocket 内核 {rocket_bin}" + ("" if rocket_bin.exists() else " 不存在(手动放置)"))
 

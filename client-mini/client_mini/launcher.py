@@ -123,7 +123,7 @@ process_manager = ProcessManager()
 
 def get_kernel_path(cfg: MiniConfig, kernel: str) -> Path:
     """对应 utils/common.ts 的 getKernalPath:{code_dir}/{kernel}/{kernel}(.exe)。"""
-    bin_path = cfg.get_code_data_path(kernel) / kernel
+    bin_path = cfg.get_kernel_code_dir(kernel) / kernel / kernel
     if IS_WINDOWS:
         bin_path = bin_path.with_suffix(".exe")
     if bin_path.exists():
@@ -212,7 +212,7 @@ def exec_bin(cfg: MiniConfig, tokens, user_account, args: list[str],
 
         logger.info(f"[exec-{kernel}] {action} 开始执行...")
 
-        fuel_code_path = str(cfg.get_code_data_path())
+        fuel_code_path = str(cfg.get_kernel_code_dir(kernel))
         fuel_pro_trading_path = str(cfg.get_all_data_path("real_trading"))
         access_token = tokens.get_access_token()
         client_config_path = str(cfg.path)  # FUEL_CLIENT_CONFIG_PATH = 正式客户端 config.json

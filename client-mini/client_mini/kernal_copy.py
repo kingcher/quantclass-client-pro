@@ -27,17 +27,17 @@ def copy_kernels(cfg: MiniConfig) -> list[str]:
     版本以 .yml 文件名为准,源标记不唯一时拒绝猜测。
     """
     source = cfg.default_code_dir.resolve()
-    target = cfg.code_dir.resolve()
-    if not cfg.bootstrap.get("code_dir") or target.is_relative_to(source):
-        return []
-    if source.is_relative_to(target):
-        raise ValueError("code_dir 不能是 default_code_dir 的父目录")
     if not source.is_dir():
         logger.warning(f"[kernal-copy] 默认内核目录不存在,跳过: {source}")
         return []
 
     copied = []
     for kernel in KERNELS:
+        target = cfg.get_kernel_code_dir(kernel).resolve()
+        if target.is_relative_to(source):
+            continue
+        if source.is_relative_to(target):
+            raise ValueError(f"{kernel} 代码目录不能是 default_code_dir 的父目录")
         markers = _markers(source, kernel)
         if not markers or not _binary(source, kernel).is_file():
             logger.info(f"[kernal-copy] {kernel} 源版本或二进制缺失,跳过")

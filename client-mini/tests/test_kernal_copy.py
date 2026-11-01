@@ -16,6 +16,7 @@ class KernalCopyTests(unittest.TestCase):
         self.target = root / "custom"
         self.cfg = SimpleNamespace(default_code_dir=self.source, code_dir=self.target,
                                    bootstrap={"code_dir": str(self.target)})
+        self.cfg.get_kernel_code_dir = lambda kernel: self.cfg.code_dir
         busy = patch("client_mini.kernal_copy.is_kernel_busy", return_value=False)
         self.busy = busy.start()
         self.addCleanup(busy.stop)
@@ -64,6 +65,7 @@ class KernalCopyTests(unittest.TestCase):
             self.assertEqual(copy_kernels(self.cfg), [])
         self.cfg.code_dir = self.target
         self.cfg.bootstrap = {}
+        self.cfg.code_dir = self.source
         self.assertEqual(copy_kernels(self.cfg), [])
 
     def test_missing_source_preserves_target(self):

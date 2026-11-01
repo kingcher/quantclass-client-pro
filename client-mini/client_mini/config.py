@@ -67,6 +67,12 @@ class MiniConfig:
             else self.default_code_dir
         )
 
+        self.kernel_code_dirs: dict[str, Path] = {
+            kernel: self._abs(value, bootstrap_path.parent) if value else self.code_dir
+            for kernel in ("fuel", "fusion", "aqua", "rocket", "scm")
+            for value in [self.bootstrap.get(f"{kernel}_code_dir")]
+        }
+
         fuel_temp_file_path = self.bootstrap.get("fuel_temp_file_path")
         self.fuel_temp_file_path: str = (
             str(self._abs(fuel_temp_file_path, bootstrap_path.parent))
@@ -138,6 +144,10 @@ class MiniConfig:
     def get_all_data_path(self, nest: str | list[str] | None = None,
                           auto_create: bool = True) -> Path:
         return self._join_under(self.data_dir, nest, auto_create)
+
+    def get_kernel_code_dir(self, kernel: str) -> Path:
+        """内核独立代码根目录,未配置时回退到 code_dir。"""
+        return self.kernel_code_dirs[kernel]
 
     def get_code_data_path(self, nest: str | list[str] | None = None,
                            auto_create: bool = True) -> Path:
