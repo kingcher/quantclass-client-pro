@@ -57,11 +57,12 @@ class MiniConfig:
                 )
             self.data_dir = self._abs(all_data_path, self.config_dir)
 
+        self.default_code_dir: Path = self.data_dir / "code"
         code_dir = self.bootstrap.get("code_dir")
         self.code_dir = (
             self._abs(code_dir, bootstrap_path.parent)
             if code_dir
-            else self.data_dir / "code"
+            else self.default_code_dir
         )
 
         reb_path = self.config_dir / "rebalance_time.json"

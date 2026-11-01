@@ -4,7 +4,8 @@
     python run.py --config config.json
 
 启动顺序(对应 src/main/index.ts 的 app.whenReady):
-    1. 回调服务(端口写回 config.json 的 server_port,rocket 会读它)
+    0. 从默认内核目录同步版本不同的内核
+    1. 回调服务(绑定 config.json 的 server_port,只读不写)
     2. 心跳监控线程
     3. 调度器主循环(从 config 读 auto_real_trading 等开关,恢复状态)
     4. 退出时强杀所有内核(对应 before-quit 的 killAllKernalByForce)
@@ -22,6 +23,7 @@ from client_mini.auth import TokenStore
 from client_mini.config import MiniConfig, StateStore
 from client_mini.heartbeat import HeartbeatMonitor
 from client_mini.kernel_state import kill_all_kernels
+from client_mini.kernal_copy import copy_kernels
 from client_mini.launcher import process_manager
 from client_mini.scheduler import Scheduler
 from client_mini.server import serve
@@ -43,6 +45,12 @@ def main():
     logger.info("=" * 60)
     logger.info(f"client-mini 启动,配置: {cfg.path}")
     logger.info(f"数据目录: {cfg.data_dir} | 内核目录: {cfg.code_dir}")
+
+    try:
+        copy_kernels(cfg)
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.error(f"[boot] 内核同步失败: {e}")
+        sys.exit(1)
 
     # -- real_market_25.json 只读前提:由正式客户端生成,mini 不写
     rm25 = cfg.config_dir / "real_market_25.json"

@@ -51,6 +51,7 @@ class MiniConfigTests(unittest.TestCase):
                             auto_real_trading=False)
         self.assertEqual(cfg.data_dir, self.root / "data")
         self.assertEqual(cfg.code_dir, self.root / "code")
+        self.assertEqual(cfg.default_code_dir, cfg.data_dir / "code")
         self.assertEqual(cfg.state_dir, self.root / "runtime")
         self.assertEqual(cfg.path, self.client)
         self.assertFalse(cfg.get_switch("auto_real_trading"))
