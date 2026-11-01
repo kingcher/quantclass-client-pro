@@ -69,7 +69,42 @@ class MiniConfigTests(unittest.TestCase):
         self.assertEqual(cfg.data_dir, self.root / "absolute-data")
         self.assertEqual(cfg.code_dir, self.root / "absolute-code")
 
-    def test_missing_client_config_rejected(self):
+    def test_missing_mini_config_uses_appdata(self):
+        client = self.root / "appdata" / "QuantclassClient" / "config.json"
+        client.parent.mkdir(parents=True)
+        client.write_text(self.original, encoding="utf-8")
+        with patch.dict(os.environ, {"APPDATA": str(client.parent.parent)}), \
+                patch("client_mini.safe_storage.read_refresh_token", return_value="token"):
+            cfg = MiniConfig(self.mini)
+        self.assertEqual(cfg.path, client)
+        self.assertEqual(cfg.data_dir, client.parent / "data")
+        self.assertEqual(cfg.state_dir, self.root / "state")
+        self.assertFalse(self.mini.exists())
+
+    def test_missing_mini_config_without_appdata_rejected(self):
+        with self.assertRaisesRegex(ValueError, "APPDATA"):
+            MiniConfig(self.mini)
+
+    def test_missing_default_client_config_rejected(self):
+        with patch.dict(os.environ, {"APPDATA": str(self.root)}):
+            with self.assertRaisesRegex(FileNotFoundError, "正式客户端"):
+                MiniConfig(self.mini)
+
+    def test_existing_mini_config_defaults_client_config(self):
+        client = self.root / "appdata" / "QuantclassClient" / "config.json"
+        client.parent.mkdir(parents=True)
+        client.write_text(self.original, encoding="utf-8")
+        with patch.dict(os.environ, {"APPDATA": str(client.parent.parent)}):
+            for value in [None, ""]:
+                data = {"data_dir": "custom-data", "auth": {"refresh_token": "test"}}
+                if value is not None:
+                    data["client_config"] = value
+                self.mini.write_text(json.dumps(data), encoding="utf-8")
+                cfg = MiniConfig(self.mini)
+                self.assertEqual(cfg.path, client)
+                self.assertEqual(cfg.data_dir, self.root / "custom-data")
+
+    def test_missing_client_config_without_appdata_rejected(self):
         with self.assertRaisesRegex(ValueError, "client_config"):
             self.load(client_config="", data_dir="data", code_dir="code")
 

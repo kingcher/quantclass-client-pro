@@ -63,7 +63,12 @@ rocket 的回调就不知道落到谁头上。改策略配置的流程:
 
 ## mini 配置说明
 
-`client_config` 必填,不再支持把业务配置直接放在 mini 配置中独立运行。
+`client_config` 可选,未填写或为空时默认使用 `%APPDATA%\QuantclassClient\config.json`。
+mini 的 `config.json` 不存在时也使用此默认地址,不会创建 mini 配置文件。
+未提供其他路径配置时,数据目录取正式配置,内核目录为 `data_dir/code`,
+状态目录为 mini 配置路径所在目录下的 `state`。
+未配置 `client_config` 且未设置 `APPDATA`,或正式客户端配置不存在时会报错。
+不支持把业务配置直接放在 mini 配置中独立运行。
 `client_config`、`data_dir`、`code_dir`、`state_dir` 的相对路径均以
 mini 配置文件所在目录为基准。
 正式配置的 `settings.all_data_path` 相对路径以正式配置所在目录为基准。

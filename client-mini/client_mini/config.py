@@ -1,6 +1,6 @@
 """配置与状态存储。
 
-mini 通过 client_config 只读正式客户端配置,可覆盖数据、内核和状态目录。
+mini 通过 client_config 只读QuantclassClient配置,可覆盖数据、内核和状态目录。
 StateStore 保存 mini 独立的运行时可变状态。
 """
 
@@ -27,22 +27,24 @@ def _atomic_write_json(path: Path, data) -> None:
 
 
 class MiniConfig:
-    """只读正式客户端配置,FUEL_CLIENT_CONFIG_PATH 始终指向它。"""
+    """只读QuantclassClient配置,FUEL_CLIENT_CONFIG_PATH 始终指向它。"""
 
     def __init__(self, config_path: str | Path):
         bootstrap_path = Path(config_path).expanduser().resolve()
-        if not bootstrap_path.exists():
-            raise FileNotFoundError(
-                f"配置文件不存在: {bootstrap_path}(可从 config.example.json 复制修改)"
-            )
-        self.bootstrap: dict = json.loads(bootstrap_path.read_text(encoding="utf-8"))
+        if bootstrap_path.exists():
+            self.bootstrap: dict = json.loads(bootstrap_path.read_text(encoding="utf-8"))
+        else:
+            self.bootstrap = {}
 
         client_config = self.bootstrap.get("client_config")
         if not client_config:
-            raise ValueError("mini 配置缺少 client_config,请指定正式客户端 config.json")
+            appdata = os.environ.get("APPDATA")
+            if not appdata:
+                raise ValueError("未配置 client_config,且未设置 APPDATA 环境变量")
+            client_config = str(Path(appdata) / "QuantclassClient" / "config.json")
         self.path = self._abs(client_config, bootstrap_path.parent)
         if not self.path.exists():
-            raise FileNotFoundError(f"正式客户端 config.json 不存在: {self.path}")
+            raise FileNotFoundError(f"QuantclassClient config.json 不存在: {self.path}")
         self.data: dict = json.loads(self.path.read_text(encoding="utf-8"))
         self.config_dir = self.path.parent
 
@@ -53,7 +55,7 @@ class MiniConfig:
             all_data_path = self.get_setting("all_data_path", "")
             if not all_data_path:
                 raise ValueError(
-                    "请配置 mini 的 data_dir 或正式客户端的 settings.all_data_path"
+                    "请配置 client_mini 的 data_dir 或QuantclassClient的数据中心地址"
                 )
             self.data_dir = self._abs(all_data_path, self.config_dir)
 
@@ -82,7 +84,7 @@ class MiniConfig:
             if self.refresh_token:
                 logger.info("[config] 使用 refresh-token.enc 中的凭证")
         self.base_url: str = self.bootstrap.get("base_url", DEFAULT_BASE_URL)
-        # mini 使用独立的运行时状态目录,不写入正式客户端配置。
+        # mini 使用独立的运行时状态目录,不写入QuantclassClient配置。
         self.state_dir: Path = self._abs(
             self.bootstrap.get("state_dir") or "./state", bootstrap_path.parent
         )
@@ -90,7 +92,7 @@ class MiniConfig:
         logger.info(f"[config] 配置源: {self.path}")
 
     def get_switch(self, key: str, default: bool = False) -> bool:
-        """调度开关优先读取 mini 配置,其次读取正式客户端配置。"""
+        """调度开关优先读取 mini 配置,其次读取QuantclassClient配置。"""
         if key in self.bootstrap:
             return bool(self.bootstrap[key])
         return bool(self.data.get(key, default))
@@ -146,7 +148,7 @@ class MiniConfig:
         return target
 
     # ------------------------------------------------------------------
-    # 注意:mini 对正式客户端的 config.json 及其同目录文件完全只读,
+    # 注意:mini 对QuantclassClient的 config.json 及其同目录文件完全只读,
     # 不提供任何写接口(回调端口取 config 里的 server_port,绑定而非改写)
     # ------------------------------------------------------------------
 
